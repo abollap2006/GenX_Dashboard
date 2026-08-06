@@ -1,0 +1,33 @@
+Community:
+	1: LCFR 
+	2: Fayetteville
+	3: Pittsboro
+
+Gender:
+	1: Male
+	2: Female
+Race:
+	1: White
+	2: Black or African American
+	3: Another Race
+
+Hispanic:
+	0: Non-Hispanic
+	1: Hispanic
+
+Age_cat:
+	1: 6-10 years old
+	2: 11-17 years old
+	3: 18-30 years old
+	4: 31-50 years old
+	5: 51-70 years old
+	6: >70 years old
+
+Years_lived_cat:
+	1: 1-10 years
+	2: 11-20 years
+	3: 21-30 years
+	4: 31-40 years
+	5: 41-50 Years
+	6: 51-60 Years
+	7: >60 years
