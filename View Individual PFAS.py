@@ -158,7 +158,7 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         
         # Create box (25th to 75th percentile)
         box = base.mark_bar(
-            size=8,
+            size=25,
             opacity=1,
             stroke='black',
             strokeWidth=1
@@ -187,8 +187,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         
         # Create median line
         median_line = base.mark_tick(
-            size=8,
-            thickness=1,
+            size=25,
+            thickness=2,
             color='black',
             stroke='black',
             strokeWidth=0.75,
@@ -211,7 +211,7 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         # Create whiskers - split into lower and upper whiskers to avoid going through box
         # Lower whisker: from 5th percentile to lower quartile (Q1)
         lower_whiskers = base.mark_rule(
-            strokeWidth=1.5,
+            strokeWidth=2.5,
             opacity=1,
             stroke='black'
         ).encode(
@@ -235,7 +235,7 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         
         # Upper whisker: from upper quartile (Q3) to 95th percentile
         upper_whiskers = base.mark_rule(
-            strokeWidth=1.5,
+            strokeWidth=2.5,
             opacity=1,
             stroke='black'
         ).encode(
@@ -259,8 +259,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         
         # Create min indicator (5th percentile tick)
         min_tick = base.mark_tick(
-            size=6,
-            thickness=0.75,
+            size=18,
+            thickness=1,
             stroke='black',  # Black border like the box
             strokeWidth=0.5
         ).encode(
@@ -283,8 +283,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         
         # Create max indicator (95th percentile tick)
         max_tick = base.mark_tick(
-            size=6,
-            thickness=0.75,
+            size=18,
+            thickness=1,
             stroke='black',  # Black border like the box
             strokeWidth=0.5
         ).encode(

@@ -396,11 +396,11 @@ with tabs[1]:
 
 # Individual PFAS analysis tab: Detailed compound-specific visualizations
 with tabs[2]:
-    read_python('View Individual PFAS2.py')
+    read_python('View_Individual_PFAS3.py')
 
 # Location-based analysis tab: Geographic comparisons
 with tabs[3]:
-    read_python('View by Location.py')
+    read_python('View by Location3.py')
 
 # NASEM 7 summed analysis tab: Combined exposure assessment
 with tabs[4]:

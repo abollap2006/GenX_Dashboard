@@ -266,6 +266,8 @@ Then, by comparing samples from many people in the same community over several y
 To learn more about PFAS and how the GenX Exposure Study began, check out these pages on our website:  
 - [Study Overview](https://genxstudy.ncsu.edu/study-overview/)  
 - [Timeline](https://genxstudy.ncsu.edu/study-timeline/)
+                
+*Please note, PFAS levels in blood are generally decreasing because exposure to certain PFAS is generally decreasing. The data included in this dashboard currently reflects blood sampling collected by the GenX Exposure Study from 2017-2023. This dashboard does NOT include PFAS in water data.*
 """)
 
     # === HOW TO USE THIS TOOL SECTION ===

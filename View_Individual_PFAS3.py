@@ -33,7 +33,7 @@ Author: [Your Name]
 Last Updated: [Date]
 """
 
-def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_years_formatted, loc_order, selected_years, num_cols=3, plot_height=350):
+def pfas_by_row(pfas_list, df_plot_adjusted, plot_years_numeric, plot_years_formatted, loc_order, selected_years, num_cols=3, plot_height=350):
     """
     Create detailed visualizations for individual PFAS compounds across locations.
     
@@ -43,7 +43,6 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
     
     Args:
         pfas_list (list): List of PFAS compounds to visualize
-        y_max (float): Maximum y-axis value for consistent scaling
         df_plot_adjusted (pd.DataFrame): Processed dataset with PFAS concentrations
         plot_years_numeric (list): Numeric year values for filtering
         plot_years_formatted (list): Formatted year labels for display
@@ -51,12 +50,61 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         selected_years (list): Specific years to include in analysis
         num_cols (int): Number of columns in the grid layout (default: 3)
     
+    Note:
+        The y-axis max/ticks are no longer passed in. Each compound's plot
+        calculates its own scale from its actual data (see calc_nice_y_axis
+        below), based on the max of its 95th percentile / upper whisker.
+    
     Returns:
         None: Displays charts directly in Streamlit interface
     """
     import altair as alt
     import pandas as pd
-    
+    import math
+
+    # === DYNAMIC Y-AXIS SCALING FUNCTION ===
+    def calc_nice_y_axis(max_value, target_ticks=6, headroom=1.05):
+        """
+        Given the actual max data value (e.g. the top of the upper whisker),
+        compute a 'nice' round-number axis max and a matching set of tick
+        values, so the plot always ends at the first clean tick above the data
+        rather than a fixed, potentially oversized, value.
+
+        Args:
+            max_value (float): The largest value that needs to fit on the axis
+            target_ticks (int): Roughly how many ticks we'd like on the axis
+            headroom (float): Small multiplier so the highest whisker isn't
+                               drawn flush against the top of the plot
+
+        Returns:
+            tuple: (nice_max, tick_values)
+        """
+        if max_value is None or pd.isna(max_value) or max_value <= 0:
+            max_value = 1
+
+        padded_max = max_value * headroom
+        raw_step = padded_max / target_ticks
+        magnitude = 10 ** math.floor(math.log10(raw_step))
+        normalized = raw_step / magnitude
+
+        # Snap the step to a conventional 'nice' increment
+        if normalized <= 1:
+            nice_step = 1 * magnitude
+        elif normalized <= 2:
+            nice_step = 2 * magnitude
+        elif normalized <= 2.5:
+            nice_step = 2.5 * magnitude
+        elif normalized <= 5:
+            nice_step = 5 * magnitude
+        else:
+            nice_step = 10 * magnitude
+
+        nice_max = math.ceil(padded_max / nice_step) * nice_step
+        num_ticks = int(round(nice_max / nice_step)) + 1
+        tick_values = [round(i * nice_step, 10) for i in range(num_ticks)]
+
+        return nice_max, tick_values
+
     # === YEAR LABEL FORMATTING FUNCTION ===
     def format_year_label(year):
         """
@@ -139,6 +187,13 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         quantiles_unstacked.columns = ['5th percentile', 'lower', 'middle', 'upper', '95th percentile']
         quantiles_unstacked = quantiles_unstacked.reset_index()
         
+        # === DYNAMIC Y-AXIS: scale to this compound's actual data ===
+        # Use the top of the upper whisker (95th percentile) across all
+        # locations/years shown in this specific plot. Each compound gets
+        # its own independently calculated scale.
+        compound_max_whisker = quantiles_unstacked['95th percentile'].max()
+        dynamic_y_max, dynamic_ticks = calc_nice_y_axis(compound_max_whisker)
+        
         # Create base chart
         base = alt.Chart(quantiles_unstacked)
         
@@ -169,8 +224,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
                    scale=alt.Scale(domain=focused_years_formatted, paddingInner=0.1),
                    axis=alt.Axis(labelFontSize=14, titleFontSize=15, titleFontWeight='bold')),
             y=alt.Y('lower:Q', title='Concentration (ng/mL)', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             y2=alt.Y2('upper:Q'),
             color=alt.Color('Location:N', 
                           scale=alt.Scale(domain=color_domain, range=color_range),
@@ -196,8 +251,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         ).encode(
             x=alt.X('Year_formatted:O', sort=focused_years_formatted),
             y=alt.Y('middle:Q', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             xOffset=alt.XOffset('Location:N', sort=["Pittsboro", "Fayetteville", "Lower Cape Fear Region"]),
             tooltip=[
                 alt.Tooltip('Location:N', title='Location'),
@@ -217,8 +272,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         ).encode(
             x=alt.X('Year_formatted:O', sort=focused_years_formatted),
             y=alt.Y('5th percentile:Q', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             y2=alt.Y2('lower:Q'),
             color=alt.Color('Location:N', 
                           scale=alt.Scale(domain=color_domain, range=color_range),
@@ -241,8 +296,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         ).encode(
             x=alt.X('Year_formatted:O', sort=focused_years_formatted),
             y=alt.Y('upper:Q', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             y2=alt.Y2('95th percentile:Q'),
             color=alt.Color('Location:N', 
                           scale=alt.Scale(domain=color_domain, range=color_range),
@@ -266,8 +321,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         ).encode(
             x=alt.X('Year_formatted:O', sort=focused_years_formatted),
             y=alt.Y('5th percentile:Q', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             color=alt.Color('Location:N', 
                           scale=alt.Scale(domain=color_domain, range=color_range),
                           legend=None),
@@ -290,8 +345,8 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
         ).encode(
             x=alt.X('Year_formatted:O', sort=focused_years_formatted),
             y=alt.Y('95th percentile:Q', 
-                   scale=alt.Scale(domain=[0, y_max]),
-                   axis=alt.Axis(values=[0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5]) if y_max <= 1.6 else alt.Axis()),
+                   scale=alt.Scale(domain=[0, dynamic_y_max]),
+                   axis=alt.Axis(values=dynamic_ticks)),
             color=alt.Color('Location:N', 
                           scale=alt.Scale(domain=color_domain, range=color_range),
                           legend=None),
@@ -381,13 +436,17 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
                 st.altair_chart(chart, use_container_width=True)
         # If 2 plots are selected, center them in a 4-column split [0.5, 2, 2, 0.5]
         elif num_plots == 2:
-            c1, c2, c3, c4 = st.columns([0.5, 2, 2, 0.5])
+            col_idx = i % num_cols
+            if col_idx == 0:
+                c1, c2, c3, c4 = st.columns([0.5, 2, 2, 0.5])
             with c2 if i == 0 else c3:
                 st.altair_chart(chart, use_container_width=True)
-        # If 3 or more plots, use standard grid columns
+
+        # If 3 or more plots, use standard grid columns, 2 per row
         else:
-            cols = st.columns(num_cols)
             col_idx = i % num_cols
+            if col_idx == 0:
+                cols = st.columns(num_cols)   # only create a new row when starting one
             with cols[col_idx]:
                 st.altair_chart(chart, use_container_width=True)
 
@@ -397,7 +456,7 @@ def pfas_by_row(pfas_list, y_max, df_plot_adjusted, plot_years_numeric, plot_yea
 unique_pfas = ['PFOS', 'PFOA', 'PFHxS', 'PFNA', 'PFDA', 'PFUnDA', 'MeFOSAA', 'PFO5DoA', 'Nafion byproduct 2']
 
 # Step-by-step guided selection with borders and limited width
-st.markdown("### Select a group of PFAS, locations, and years to see data on:")
+st.markdown("### Compare multiple PFAS blood serum levels for each study location with boxplots")
 
 # Add custom CSS to constrain dropdowns and remove centering for selection guide
 st.markdown("""
@@ -593,7 +652,7 @@ data_by_location = filtered_data.groupby(['Location', 'PFAS'], observed=True).si
 data_by_location.columns = ['Location', 'PFAS', 'Count']
 if len(location) == 1 and data_by_location['Count'].sum() == 0:
     st.error(f"No data found for {location[0]} with selected PFAS compounds and years. This location may not have data for the selected criteria.")
-    st.stop() 
+    st.stop()
 
 # Filter for locations with a detection rate greater than 50% for each PFAS and Location
 # For multi-year selections, check detection rates per year to avoid filtering out good years
@@ -665,7 +724,7 @@ num_large = len(selected_large)
 num_medium= len(selected_medium)
 num_small = len(selected_small)
 
-num_cols = 3
+num_cols = 2
 num_rows = (num_large + num_medium + num_small + num_cols - 1) // num_cols 
 
 plot_height = 350  
@@ -674,9 +733,7 @@ plot_height = 350
 #cols = st.columns(num_cols)
 #i = 0
 
-pfas_by_row(selected_large, y_max=30, num_cols=3, df_plot_adjusted=df_plot_adjusted, plot_years_numeric=plot_years_numeric, plot_years_formatted=plot_years, loc_order=location_options, selected_years=year, plot_height=plot_height)
-pfas_by_row(selected_medium, y_max=10, num_cols=3, df_plot_adjusted=df_plot_adjusted, plot_years_numeric=plot_years_numeric, plot_years_formatted=plot_years, loc_order=location_options, selected_years=year, plot_height=plot_height)
-pfas_by_row(selected_small, y_max=1.6, num_cols=3, df_plot_adjusted=df_plot_adjusted, plot_years_numeric=plot_years_numeric, plot_years_formatted=plot_years, loc_order=location_options, selected_years=year, plot_height=plot_height)
+pfas_by_row(selected_large + selected_medium + selected_small, num_cols=2, df_plot_adjusted=df_plot_adjusted, plot_years_numeric=plot_years_numeric, plot_years_formatted=plot_years, loc_order=location_options, selected_years=year, plot_height=plot_height)
 
 # Add information about data availability
 #st.markdown("---")
@@ -720,9 +777,13 @@ if year_limitations:
     st.info(timeline_text)
 
 title = f"General {lab_results} Overview"
-columns_per_row = 3
+columns_per_row = 2
 
 all_combos = pd.MultiIndex.from_product(
     [plot_years, location, lab_results, age_order, gender_order],
     names=['Year', 'Location', 'PFAS', 'age_cat', 'gender']
 ).to_frame(index=False)
+
+st.markdown("""
+*Please note, PFAS levels in blood are generally decreasing because exposure to certain PFAS is generally decreasing. The data included in this dashboard currently reflects blood sampling collected by the GenX Exposure Study from 2017-2023. This dashboard does NOT include PFAS in water data.*
+""")

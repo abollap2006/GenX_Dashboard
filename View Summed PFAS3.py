@@ -144,7 +144,6 @@ st.markdown("""
 ### What are the NASEM 7?
 In 2022, the National Academy of Science, Engineering and Medicine (NASEM) released clinical guidance for PFAS chemicals for the first time. 7 PFAS chemicals were included in the guidance: MeFOSAA, PFHxS, PFOA, PFDA, PFUnDA, PFOS, and PFNA.
 There are over 14,000 PFAS in existence, but these 7 are some the most commonly used since PFAS was introduced to manufacturing in the 1950’s.
-*This info also pops up on dashboard when a person selects looking at NASEM 7 data.*
 """)
     
 st.markdown("""
