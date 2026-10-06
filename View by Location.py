@@ -126,7 +126,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             
             # Create box (25th to 75th percentile)
             box = base.mark_bar(
-                size=8,
+                size=10,
                 opacity=0.7,
                 stroke='black',
                 strokeWidth=1
@@ -156,7 +156,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             
             # Create median line
             median_line = base.mark_tick(
-                size=8,  # Increased from 12 to 8 for better visibility
+                size=10,  # Increased from 12 to 8 for better visibility
                 thickness=1,  # Increased to 1 for better visibility
                 color='black',  # White color for good contrast against colored boxes
                 stroke='black',  # Black border like the box
@@ -180,7 +180,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             # Create whiskers - split into lower and upper whiskers to avoid going through box
             # Lower whisker: from 5th percentile to lower quartile (Q1)
             lower_whiskers = base.mark_rule(
-                strokeWidth=1.5,
+                strokeWidth=2.5,
                 opacity=1,
                 stroke='black'
             ).encode(
@@ -205,7 +205,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             
             # Upper whisker: from upper quartile (Q3) to 95th percentile
             upper_whiskers = base.mark_rule(
-                strokeWidth=1.5,
+                strokeWidth=2.5,
                 opacity=1,
                 stroke='black'
             ).encode(
@@ -230,7 +230,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             
             # Create min indicator (5th percentile tick)
             min_tick = base.mark_tick(
-                size=6,
+                size=9,
                 thickness=0.75,
                 stroke='black',  # Black border like the box
                 strokeWidth=0.5
@@ -255,7 +255,7 @@ def view_by_location(pfas_range, predefined_order, selected_locations, y_max, ax
             
             # Create max indicator (95th percentile tick)
             max_tick = base.mark_tick(
-                size=6,
+                size=8,
                 thickness=0.75,
                 stroke='black',  # Black border like the box
                 strokeWidth=0.5
